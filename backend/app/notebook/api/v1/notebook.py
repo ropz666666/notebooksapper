@@ -25,8 +25,9 @@ async def get_all_notebooks() -> ResponseModel:
     return response_base.success(data=data)
 
 
-@router.get('/user/all', summary='获取用户所有笔记本', dependencies=[DependsJwtAuth])
+@router.get('/user/all', summary='获取用户所有笔记本')
 async def get_user_all_notebooks(request: Request,) -> ResponseModel:
+
     notebooks = await notebook_service.get_user_notebooks(user_uuid=request.user.uuid)
     data = select_list_serialize(notebooks)
     return response_base.success(data=data)

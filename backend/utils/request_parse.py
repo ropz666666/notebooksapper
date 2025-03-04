@@ -102,6 +102,14 @@ async def parse_ip_info(request: Request) -> IpInfo:
 
 def parse_user_agent_info(request: Request) -> UserAgentInfo:
     user_agent = request.headers.get('User-Agent')
+    if not user_agent:  # 处理 User-Agent 缺失的情况
+        return UserAgentInfo(
+            user_agent="Unknown",
+            device="Unknown",
+            os="Unknown",
+            browser="Unknown"
+        )
+
     _user_agent = parse(user_agent)
     os = _user_agent.get_os()
     browser = _user_agent.get_browser()

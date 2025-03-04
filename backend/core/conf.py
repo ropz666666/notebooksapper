@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     OPERA_LOG_ENCRYPT_SECRET_KEY: str  # 密钥 os.urandom(32), 需使用 bytes.hex() 方法转换为 str
 
     # FastAPI
-    FASTAPI_API_V1_PATH: str = '/api/v1'
+    FASTAPI_API_V1_PATH: str = '/spn/v1'
     FASTAPI_TITLE: str = 'FastAPI'
     FASTAPI_VERSION: str = '0.0.1'
     FASTAPI_DESCRIPTION: str = 'FastAPI Best Architecture'
@@ -139,6 +139,7 @@ class Settings(BaseSettings):
         'http://localhost:5173',
         'http://localhost:5174',
         'http://localhost:5175',
+        'http://localhost:5273',
     ]
     CORS_EXPOSE_HEADERS: list[str] = [
         TRACE_ID_REQUEST_HEADER_KEY,

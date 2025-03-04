@@ -21,6 +21,7 @@ export const fetchAllNoteSources = createAsyncThunk(
         try {
             return await queryNoteSourceAll();
         } catch (error: unknown) {
+            console.log("error", error);
             if (typeof error === 'object' && error !== null && 'response' in error) {
                 const err = error as { response: { data?: never } };
                 if (err.response && 'data' in err.response) {

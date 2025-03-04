@@ -1,4 +1,4 @@
-const url = 'ws://127.0.0.1:8000/';
+const url = 'wss://ai.jxnu.edu.cn/';
 
 interface Message {
     content: string;
@@ -19,7 +19,7 @@ export class ClientChatController {
     ) {
         this.messages = messages;
         this.setMessages = setMessages;
-        this.socket = new WebSocket(`${url}api/v1/notebook/ws/ClientLLMResponse?source=${source}&notes=${notes}`);
+        this.socket = new WebSocket(`${url}spn/v1/notebook/ws/ClientLLMResponse?source=${source}&notes=${notes}`);
         this.initializeWebSocket();
     }
 

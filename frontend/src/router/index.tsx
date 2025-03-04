@@ -2,7 +2,7 @@ import {BrowserRouter as Router, Routes, Route, Outlet, Navigate} from 'react-ro
 import NotebookPage from '../pages/notebook';
 import PlaygroundPage from '../pages/playground';
 import Personal from '../pages/personal/index.tsx';
-import { useEffect, useState,useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import {getToken} from "../utils/auth.ts";
 import { useDispatchUser } from "../hooks";
 
@@ -49,7 +49,8 @@ function AppRouter() {
 
             logoutUser()
         }
-        return token ? <Outlet/> : <Navigate to="/login" replace/>;
+        return token ? <Outlet/> : // 重定向到登录页面
+            window.location.href = '/login'; // 更新为你的登录页面路径;
     }
         return (
             <Router>

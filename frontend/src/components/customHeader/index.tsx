@@ -64,7 +64,7 @@ const CustomHeader: React.FC = () => {
         }}>
             {/* Left Side: Logo and Notebook Title */}
             <div style={{ display: 'flex', alignItems: 'center' }}>
-                <Button type={"text"} size={"large"} icon={<ArrowLeftOutlined />} onClick={() => navigate('/playground')}/>
+                <Button type={"text"} size={"large"} icon={<ArrowLeftOutlined />} onClick={() => navigate('/note/playground')}/>
                 {!isEditing ? (
                     <h2 style={{ margin: 0, cursor: 'pointer' }} onClick={() => setIsEditing(true)}>
                         {title} <EditOutlined style={{ fontSize: '16px', marginLeft: '8px' }} />

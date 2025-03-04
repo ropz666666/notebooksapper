@@ -33,15 +33,11 @@ export function useDispatchUser() {
     // Logout action
     const logoutUser = useCallback(() => {
         dispatch(logout());
-
         // 重定向到登录页面
         window.location.href = '/login'; // 更新为你的登录页面路径
         // 清除用户身份信息
         clearToken()
         window.location.reload();
-        // 清除用户身份信息
-        clearToken()
-        dispatch(logout());
     }, [dispatch]);
 
     // Fetch user information

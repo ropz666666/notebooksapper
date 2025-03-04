@@ -15,7 +15,7 @@ app = register_app()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["5273"],  # 或者指定前端的 URL
+    allow_origins=["*"],  # 或者指定前端的 URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,7 +31,7 @@ if __name__ == '__main__':
         config = uvicorn.Config(
             app=f'{Path(__file__).stem}:app',
             host="0.0.0.0",   # 你也可以换成其他 IP，如 "0.0.0.0" 使外部可以访问
-            port=8100,
+            port=8020,
             reload=True
         )
         server = uvicorn.Server(config)

@@ -6,7 +6,7 @@ from backend.common.model import Base, id_key
 
 
 class NoteSource(Base):
-    __tablename__ = "noteSource"
+    __tablename__ = "notesource"
     id: Mapped[id_key] = mapped_column(init=False)
     uuid: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     title: Mapped[str] = mapped_column(Text)

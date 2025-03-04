@@ -10,6 +10,10 @@ class StateMiddleware(BaseHTTPMiddleware):
     """请求 state 中间件"""
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        # 如果是 WebSocket 请求，直接跳过中间件逻辑
+        if request.scope["type"] == "websocket":
+            return await call_next(request)
+
         ip_info = await parse_ip_info(request)
         ua_info = parse_user_agent_info(request)
 

@@ -7,7 +7,7 @@ from backend.app.notebook.schema.notesource import CreateNoteSourceParam, Update
 
 
 class CRUDNoteSource(CRUDPlus[NoteSource]):
-    async def get(self, db, source_id: int) -> NoteSource | None:
+    async def get(self, db, source_id: int) -> Notesource | None:
         """
         获取指定来源
 
