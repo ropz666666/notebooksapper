@@ -4,7 +4,8 @@ import { CopyOutlined, PushpinOutlined } from '@ant-design/icons';
 import { useDispatchNote, useNotebookSelector } from "../../hooks";
 import { NoteReq } from "../../api/note.ts";
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+// import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 
 interface Message {
     role: 'user' | 'assistant' | 'progress' | 'error';
@@ -56,7 +57,7 @@ const Conservation: React.FC<ConservationProps> = ({ messages }) => {
                                 <>
                                     <ReactMarkdown
                                         children={item.content}
-                                        remarkPlugins={[remarkGfm]}
+                                        remarkPlugins={[remarkBreaks]}
                                         components={{
                                             p: ({children }) => <p style={{ marginBottom: '10px' }}>{children}</p>,
                                         }}

@@ -38,13 +38,28 @@ class ChatOpenAI(BaseLLM):
         except Exception as e:
             print(f"An error occurred: {e}")
 
-    def generate(self, messages: List[dict], response_format: str = "text", streaming: bool = False,  **kwargs: Any) -> str:
-        response = self.client.chat.completions.create(
-            model="deepseek-reasoner",
-            messages=messages,
-            response_format={"type": response_format}
-        )
-        return response.choices[0].message.content
+    def generate(self, messages: List[dict], response_format: str = "text", streaming: bool = True,
+                 **kwargs: Any) -> str:
+        if streaming:
+            response = self.client.chat.completions.create(
+                model="deepseek-reasoner",
+                messages=messages,
+                response_format={"type": response_format},
+                stream=True  # 启用流式输出
+            )
+            for chunk in response:
+                content = chunk.choices[0].delta.content
+                print("Chunk content:", repr(content))  # 使用 repr 显示换行符
+                if content:  # 确保内容不为空
+                    yield content + "\n"  # 显式添加换行符
+                # print(chunk,"CHUNK")
+        else:
+            response = self.client.chat.completions.create(
+                model="deepseek-reasoner",
+                messages=messages,
+                response_format={"type": response_format}
+            )
+            return response.choices[0].message.content
 
     async def agenerate(self, messages: List[dict], streaming: bool = False, **kwargs: Any) -> str:
         response = await self.process_message(messages)

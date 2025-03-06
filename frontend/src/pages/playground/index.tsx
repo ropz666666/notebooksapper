@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Button, Card, Divider, Dropdown, Space, Table, Typography, Modal, Input, message, Menu, Popover} from 'antd';
+import {HomeOutlined} from '@ant-design/icons';
 import type {MenuProps, TableColumnsType} from 'antd';
 import {
     PlusOutlined,
@@ -63,9 +64,12 @@ const PlaygroundPage: React.FC = () => {
     const notebooks = useNotebookSelector((state) => state.notebook.notebooks);
     const navigate = useNavigate();
     const notebook = useNotebookSelector((state) => state.notebook.notebookDetails);
-    // States for title editing
-    const [isEditing, setIsEditing] = useState(false);
-    const [title, setTitle] = useState('');
+
+    //修改状态初始化方式
+    const [editingStates, setEditingStates] = useState<Record<number, { tempTitle: string | null }>>({});
+
+    // 修改后的状态管理（每个笔记本独立状态）
+
 
     const {updateNotebookInfo} = useDispatchNotebook();
     useEffect(() => {
@@ -116,17 +120,16 @@ const PlaygroundPage: React.FC = () => {
         message.success("您已成功退出登录！");
 
     };
+    const user_items = [
+        {
+            key: '1',
+            label: '退出登录', // 添加文字描述
+            onClick: handleLogout
+        }
 
+    ];
     const userMenu = (
-        <Menu>
-
-            <Menu.Item key="1" onClick={handlePersonalClick}>
-                个人中心
-            </Menu.Item>
-            <Menu.Item key="2" onClick={handleLogout}>
-                退出登录
-            </Menu.Item>
-        </Menu>
+        <Menu items={user_items} />
     );
 
     const handleDeleteNotebook = async (id: number) => {
@@ -147,15 +150,33 @@ const PlaygroundPage: React.FC = () => {
         });
     };
 
-    const handleTitleEdit = async () => {
-        // if (!notebook) return;
+    //修改后的处理函数
+    const handleTitleEdit = async (id: number) => {
+        const currentState = editingStates[id];
+        if (!currentState?.tempTitle?.trim()) {
+            message.error("标题不能为空");
+            return;
+        }
+
         try {
-            console.log(notebook.id)
-            await updateNotebookInfo(notebook.id, {title});
-            message.success("Title updated successfully");
-            // setIsEditing(false);
+            await updateNotebookInfo(id, { title: currentState.tempTitle });
+            message.success("修改成功");
+            getAllNotebooks();
+            setEditingStates(prev => {
+                const newState = { ...prev };
+                delete newState[id];
+                return newState;
+            });
         } catch (error) {
-            message.error("Failed to update title");
+            // 修改失败时回滚到原始标题
+            setEditingStates(prev => ({
+                ...prev,
+                [id]: {
+                    tempTitle: currentState.originalTitle,
+                    originalTitle: currentState.originalTitle
+                }
+            }));
+            message.error("修改失败");
         }
     };
 
@@ -164,6 +185,14 @@ const PlaygroundPage: React.FC = () => {
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                 <Title level={2}>欢迎使用 NotebookSapper</Title>
                 <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+                    <Button
+                        type="primary"
+                        icon={<HomeOutlined />}
+                        onClick={() => window.location.href = '/'} // 替换为实际的主页URL
+                        style={{ marginRight: '8px' }}
+                    >
+                        返回主页
+                    </Button>
                     {/*<SettingOutlined style={{fontSize: '24px'}}/>*/}
                     <Dropdown overlay={userMenu} trigger={['click']}>
                         <UserOutlined style={{fontSize: '24px', cursor: 'pointer'}}/>
@@ -204,41 +233,92 @@ const PlaygroundPage: React.FC = () => {
                             extra={
                                 <Dropdown
                                     overlay={
-                                        <Menu>
-                                            <Menu.Item
-                                                key="1"
-                                                onClick={() => {
-                                                    handleDeleteNotebook(note?.id); // Now `note` is in scope
-                                                }}
-                                            >
-                                                <DeleteOutlined/> 删除
-                                            </Menu.Item>
-
-                                            <Menu.Item key="2">
-                                                <Popover content={
-
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        marginBottom: "10px"
-                                                    }}>
-                                                        <Input
-                                                            defaultValue={note?.title}
-                                                            style={{width: '200px', marginRight: '8px'}}
-                                                        />
-                                                        <Button.Group>
-                                                            <Button icon={<CheckOutlined/>} type="primary"
-                                                                    onClick={handleTitleEdit}/>
-                                                            {/*<Button icon={<CloseOutlined />} onClick={() => setIsEditing(false)} />*/}
-                                                        </Button.Group>
-                                                    </div>}
-
-                                                         title="修改标题" trigger="click">
-                                                    <EditOutlined/>修改标题
-
-                                                </Popover>
-                                            </Menu.Item>
-                                        </Menu>
+                                        <Menu
+                                            items={[
+                                                {
+                                                    key: '1',
+                                                    label: (
+                                                        <span>
+                                                        <DeleteOutlined /> 删除
+                                                        </span>
+                                                    ),
+                                                    onClick: () => handleDeleteNotebook(note?.id)
+                                                },
+                                                {
+                                                    key: '2',
+                                                    label: (
+                                                        <Popover
+                                                            content={
+                                                                <div
+                                                                    style={{ display: 'flex', alignItems: 'center', marginBottom: "10px" }}
+                                                                    onClick={e => e.stopPropagation()}
+                                                                >
+                                                                    <Input
+                                                                        value={editingStates[note.id]?.tempTitle ?? ''} // 始终显示编辑状态
+                                                                        onChange={(e) => setEditingStates(prev => ({
+                                                                            ...prev,
+                                                                            [note.id]: {
+                                                                                tempTitle: e.target.value,
+                                                                                originalTitle: note.title // 保留原始标题用于回滚
+                                                                            }
+                                                                        }))}
+                                                                        style={{ width: '200px', marginRight: '8px' }}
+                                                                        status={editingStates[note.id]?.tempTitle === '' ? 'error' : undefined}
+                                                                    />
+                                                                    <Space.Compact>
+                                                                        <Button
+                                                                            icon={<CheckOutlined />}
+                                                                            type="primary"
+                                                                            disabled={!editingStates[note.id]?.tempTitle?.trim()}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleTitleEdit(note.id);
+                                                                            }}
+                                                                        />
+                                                                        <Button
+                                                                            icon={<CloseOutlined />}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setEditingStates(prev => {
+                                                                                    const newState = { ...prev };
+                                                                                    delete newState[note.id];
+                                                                                    return newState;
+                                                                                });
+                                                                            }}
+                                                                        />
+                                                                    </Space.Compact>
+                                                                </div>
+                                                            }
+                                                            title="修改标题"
+                                                            trigger="click"
+                                                            open={!!editingStates[note.id]}
+                                                            onOpenChange={(visible) => {
+                                                                if (!visible) {
+                                                                    setEditingStates(prev => {
+                                                                        const newState = { ...prev };
+                                                                        delete newState[note.id];
+                                                                        return newState;
+                                                                    });
+                                                                }
+                                                            }}
+                                                        >
+      <span onClick={(e) => {
+          e.stopPropagation();
+          setEditingStates(prev => ({
+              ...prev,
+              [note.id]: {
+                  tempTitle: note.title, // 初始化时设置临时标题为当前标题
+                  originalTitle: note.title
+              }
+          }));
+      }}>
+        <EditOutlined /> 修改标题
+      </span>
+                                                        </Popover>
+                                                    )
+                                                }
+                                            ]}
+                                        />
                                     }
                                     trigger={['click']}
                                 >
@@ -247,7 +327,13 @@ const PlaygroundPage: React.FC = () => {
                             }
                         >
                             <Card.Meta
-                                onClick={() => handleNotebookClick(note?.uuid)}
+                                onClick={(e) => {
+                                    if (editingStates[note.id]) { // 编辑时阻止跳转
+                                        e.stopPropagation();
+                                    } else {
+                                        handleNotebookClick(note.uuid);
+                                    }
+                                }}
                                 title={<h3>{note?.title}</h3>}
                                 description={`${note?.created_time} `}
 

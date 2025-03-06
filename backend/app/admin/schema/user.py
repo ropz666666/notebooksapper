@@ -30,10 +30,17 @@ class AuthSSOLoginParam(SchemaBase):
 class RegisterUserParam(AuthSchemaBase):
     nickname: str
     email: str
-    API_KEY: Optional[str] = None
+    settings: Optional[str] = None
 
-class SsoRegisterUserParam(SchemaBase):
+class SSORegisterUserParam(SchemaBase):
+    username: str
+    username_iv: str  # 添加 iv 字段
     nickname: str
+    nickname_iv: str
+    password: Optional[str] = None
+    captcha: Optional[str] = None
+    email: Optional[str] = None
+    settings: Optional[str] = None
 
 
 class AuthRegisterParam(SchemaBase):
@@ -41,7 +48,7 @@ class AuthRegisterParam(SchemaBase):
     password: str
     nickname: str
     email: str
-    API_KEY: Optional[str] = None
+    setting: Optional[str] = None
     captcha: str
     username_iv: str  # 添加 iv 字段
     nickname_iv: str
@@ -67,9 +74,8 @@ class AddUserParam(AuthSchemaBase):
 
 class UserInfoSchemaBase(SchemaBase):
     # dept_id: Optional[int] = None
-    API_KEY: Optional[str] = None
+    settings: Optional[str] = None
     username: str
-
     nickname: str
     email: EmailStr = Field(..., examples=['user@example.com'])
     # phone: Optional[CustomPhoneNumber] = None
@@ -96,13 +102,13 @@ class GetUserInfoNoRelationDetail(UserInfoSchemaBase):
     uuid: str
     avatar: Optional[str] = None
     status: StatusType = Field(default=StatusType.enable)
+    # phone: Optional[CustomPhoneNumber] = None
     is_superuser: bool
     is_staff: bool
     is_multi_login: bool
     join_time: datetime = None
     last_login_time: Optional[datetime] = None
-    API_KEY: Optional[str] = None
-
+    settings: Optional[str] = None
 
 class GetUserInfoListDetails(GetUserInfoNoRelationDetail):
     model_config = ConfigDict(from_attributes=True)

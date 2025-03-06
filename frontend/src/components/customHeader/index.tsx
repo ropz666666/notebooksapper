@@ -36,7 +36,6 @@ const CustomHeader: React.FC = () => {
     };
 
     const items: MenuProps['items'] = [
-        { label: '个人中心', key: '1' },
 
         { label: '退出登录', key: '2' },
     ];

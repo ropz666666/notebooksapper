@@ -132,17 +132,25 @@ const NotebookPage: React.FC = () => {
         const userMessage: Message = { role: 'user', content: value || inputValue };
         const query = [...messages, userMessage];
 
-        new ClientChatController(
-            query,
-            setMessages,
-            selectSource,
-            Array.from(selectedNotes)
-        );
-
+        // 将用户消息添加到消息列表
         setMessages((prevMessages) => [...prevMessages, userMessage]);
 
-
+        // 清空输入框
         setInputValue('');
+        try {
+            new ClientChatController(
+                query,
+                setMessages,
+                selectSource,
+                Array.from(selectedNotes)
+            );
+        }
+        catch (e)
+        {
+            const errorMessage = e instanceof Error ? e.message : "An unknown error occurred";
+            message.error(errorMessage);
+        }
+
     };
 
 

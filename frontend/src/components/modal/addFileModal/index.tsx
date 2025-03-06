@@ -27,45 +27,88 @@ const AddFileModal: React.FC<AddFileModalProps> = ({ visible, onCancel }) => {
             if (!notebook) return;
             const values = await form.validateFields();
 
-            if (sourceType === 'docs' && fileList.length > 0) {
-                setLoading(true);  // 开启加载提示
-                message.loading({ content: '文件上传中...', key: 'uploading' });
-
-                for (let i = 0; i < fileList.length; i++) {
-                    await addNewNoteSource(notebook.id, { file: fileList[i], file_type: values });
-                    message.success({ content: `文件 ${i + 1}/${fileList.length} 上传成功`, key: 'uploading', duration: 2 });
+            if (sourceType === 'docs') {
+                if (fileList.length === 0) {
+                    message.error('请上传文件');
+                    return;
                 }
 
-                message.success({ content: '所有文件上传成功', key: 'uploading', duration: 2 });
+                setLoading(true);
+                message.loading({ content: '文件上传中...', key: 'uploading' });
+
+                const fileType = values?.sourceType || 'docs';
+
+                const uploadResults = await Promise.allSettled(
+                    fileList.map(async (file, index) => {
+                        try {
+                            const response = await addNewNoteSource(notebook.id, { file, file_type: fileType });
+
+                            // 确保后端返回的是正确的响应格式，如果失败则 throw error
+                            if (!response || response.error) {
+                                throw new Error(response?.error || "上传失败");
+                            }
+
+                            message.success({ content: `文件 ${index + 1}/${fileList.length} 上传成功`, key: `uploading_${index}`, duration: 2 });
+                            return { success: true };
+                        } catch (error) {
+                            message.error({ content: `文件 ${index + 1}/${fileList.length} 上传失败: ${error.message}`, key: `uploading_${index}`, duration: 2 });
+                            return { success: false };
+                        }
+                    })
+                );
+
+                const allSuccess = uploadResults.every(result => result.status === "fulfilled" && result.value?.success);
+
+                if (allSuccess) {
+                    message.success({ content: '所有文件上传成功', key: 'uploading', duration: 2 });
+                    onCancel();
+                    form.resetFields();
+                    setSourceType('docs');
+                    setFileList([]);
+                }
             } else {
                 message.error('请上传文件');
+                return;
             }
-
-            onCancel(); // 关闭模态框
-            form.resetFields();
-            setSourceType('docs');
-            setFileList([]);
         } catch (error) {
-            message.error('请填写完整的表单');
+            message.error('文件上传过程中出现错误，请重试');
         } finally {
-            setLoading(false); // 关闭加载提示
+            setLoading(false);
         }
     };
 
+// 限制上传文件类型
+    const beforeUpload = (file: RcFile) => {
+        const allowedTypes = [
+            'application/pdf',           // PDF
+            'text/plain',                // TXT
+            'text/markdown',             // Markdown
+            'application/msword',        // DOC (老版 Word)
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX (新版 Word)
+            'text/csv',                  // CSV
+            'application/vnd.ms-excel', ]  // 兼容部分 CSV;
+        if (!allowedTypes.includes(file.type)) {
+            message.error(`不支持的文件类型: ${file.name}`);
+            return Upload.LIST_IGNORE;
+        }
+
+        if (fileList.length >= maxSources) {
+            message.warning(`最多只能上传 ${maxSources} 个文件`);
+            return Upload.LIST_IGNORE;
+        }
+
+        setFileList([...fileList, file]);
+        return false;
+    };
     // Upload properties and restrictions
     const uploadProps: UploadProps = {
         name: 'file',
         multiple: false,
         fileList,
-        beforeUpload: (file: RcFile) => {
-            if (fileList.length >= maxSources) {
-                message.warning(`最多只能上传 ${maxSources} 个文件`);
-                return Upload.LIST_IGNORE;
-            }
-            setFileList([...fileList, file]);
-            return false;
+        beforeUpload,
+        onRemove: file => {
+            setFileList(fileList.filter(f => f.uid !== file.uid));
         },
-        onRemove: () => setFileList([]),
     };
 
     return (
@@ -95,12 +138,12 @@ const AddFileModal: React.FC<AddFileModalProps> = ({ visible, onCancel }) => {
                         <Option value="docs">
                             <FileTextOutlined /> 文档
                         </Option>
-                        <Option value="link">
-                            <LinkOutlined /> 网站链接
-                        </Option>
-                        <Option value="text">
-                            <FileTextOutlined /> 复制文本
-                        </Option>
+                        {/*<Option value="link">*/}
+                        {/*    <LinkOutlined /> 网站链接*/}
+                        {/*</Option>*/}
+                        {/*<Option value="text">*/}
+                        {/*    <FileTextOutlined /> 复制文本*/}
+                        {/*</Option>*/}
                     </Select>
                 </Form.Item>
 
@@ -111,7 +154,7 @@ const AddFileModal: React.FC<AddFileModalProps> = ({ visible, onCancel }) => {
                                 <UploadOutlined />
                             </p>
                             <p className="ant-upload-text">拖放或选择文件进行上传</p>
-                            <p className="ant-upload-hint">支持的文件类型: PDF, .txt, Markdown, 音频 (例如 mp3)</p>
+                            <p className="ant-upload-hint">支持的文件类型: PDF, .txt, Markdown，DOC，DOCX，CSV</p>
                         </Upload.Dragger>
                     </Form.Item>
                 )}

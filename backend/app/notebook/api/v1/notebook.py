@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 import json
 import uuid
+import asyncio
 from typing import Annotated
 from fastapi import WebSocket
 from fastapi import APIRouter, Depends, Path, Query, Request, Body
-
+from fastapi import HTTPException
 from backend.app.notebook.schema.notebook import CreateNotebookParam, GetNotebookListDetails, UpdateNotebookParam
 from backend.app.notebook.service.chat_service import ChatService
 from backend.app.notebook.service.notebook_service import notebook_service
@@ -14,6 +15,7 @@ from backend.common.response.response_schema import ResponseModel, response_base
 from backend.common.security.jwt import DependsJwtAuth
 from backend.database.db_mysql import CurrentSession
 from backend.utils.serializers import select_as_dict, select_list_serialize
+from starlette.responses import StreamingResponse
 
 router = APIRouter()
 
@@ -130,22 +132,51 @@ async def delete_notebooks(pk: Annotated[list[int], Query(...)]) -> ResponseMode
     return response_base.fail()
 
 
-@router.websocket("/ws/ClientLLMResponse")
-async def chat_websocket(websocket: WebSocket):
-    # 获取 WebSocket 连接中的 `source` 参数
-    source_param = websocket.query_params.get("source")
+@router.post("/sse/ClientLLMResponse", response_class=StreamingResponse)
+async def chat_sse(request: Request):
+    # 从请求体中获取用户输入的消息
+    try:
+        user_id = request.headers.get('User-ID')  # 从请求头中获取 User-ID
+        print("user_id:", user_id)
+        if not user_id:
+            raise HTTPException(status_code=400, detail="网络异常！")
+
+        api_key= await notebook_service.get_api_key_by_user_id(user_id=user_id)
+        print("api_key", api_key)
+        request_data = await request.json()
+        user_message = request_data.get("message")
+        if not user_message:
+            raise HTTPException(status_code=400, detail="Message field is required")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid request body")
+    print(user_message)
+    # 获取查询参数
+    source_param = request.query_params.get("source")
     source = source_param.split(",") if source_param else []
 
-    notes_param = websocket.query_params.get("notes")
+    notes_param = request.query_params.get("notes")
     notes = notes_param.split(",") if notes_param else []
-    chat_service = ChatService(source, notes)
-    await chat_service.initialize_sources()
-    await websocket.accept()
+    try:
+        # 初始化 ChatService
+        chat_service = ChatService(source, notes, api_key)
+        await chat_service.initialize_sources()
+        async def event_stream():
+            try:
+                # 调用 process_message 并逐步返回流式生成的内容
+                async for chunk in chat_service.process_message(
+                    [{"role": "user", "content": user_message}]
+                ):
+                    yield f"data: {chunk}\n\n"
+                    await asyncio.sleep(0.1)  # 模拟延迟
 
-    while True:
-        data = await websocket.receive_text()
+            except asyncio.CancelledError:
+                # 处理客户端断开连接
+                print("Client disconnected")
+            except Exception as e:
+                # 处理其他异常
+                print(f"Error: {e}")
+                yield f"data: Error: {e}\n\n"
 
-        # 处理消息，并可根据 source 参数的值执行不同的逻辑
-        result = await chat_service.process_message(json.loads(data))
-
-        await websocket.send_text(result)
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="当前API或模型错误,请你重新尝试")

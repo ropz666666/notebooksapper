@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Union
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.admin.model.sys_user_dept import sys_user_dept
@@ -21,11 +21,11 @@ class User(Base):
     id: Mapped[id_key] = mapped_column(init=False)
     uuid: Mapped[str] = mapped_column(String(50), init=False, default_factory=uuid4_str, unique=True)
     username: Mapped[str] = mapped_column(String(20), unique=True, index=True, comment='用户名')
-    nickname: Mapped[str] = mapped_column(String(20), unique=True, comment='昵称')
+    nickname: Mapped[str] = mapped_column(String(20), comment='昵称')
     password: Mapped[str | None] = mapped_column(String(255), comment='密码')
-    API_KEY: Mapped[str| None] = mapped_column(String(100),  comment='API-KEY')
     salt: Mapped[str | None] = mapped_column(String(5), comment='加密盐')
     email: Mapped[str] = mapped_column(String(50), unique=True, index=True, comment='邮箱')
+    settings: Mapped[str| None] = mapped_column(String(100),  comment='用户配置')
     is_superuser: Mapped[bool] = mapped_column(default=False, comment='超级权限(0否 1是)')
     is_staff: Mapped[bool] = mapped_column(default=False, comment='后台管理登陆(0否 1是)')
     status: Mapped[int] = mapped_column(default=1, comment='用户账号状态(0停用 1正常)')
@@ -34,7 +34,6 @@ class User(Base):
     phone: Mapped[str | None] = mapped_column(String(11), default=None, comment='手机号')
     join_time: Mapped[datetime] = mapped_column(init=False, default_factory=timezone.now, comment='注册时间')
     last_login_time: Mapped[datetime | None] = mapped_column(init=False, onupdate=timezone.now, comment='上次登录')
-
 
     depts: Mapped[list['Dept']] = relationship(  # noqa: F821
         init=False, secondary=sys_user_dept, back_populates='users'

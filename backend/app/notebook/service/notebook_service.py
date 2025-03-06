@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from typing import Sequence
-
+import json
 from fastapi import Request
-from sqlalchemy import Select
+from sqlalchemy import Select,select
 
 from backend.app.notebook.crud.crud_notebook import notebook_dao
 from backend.app.notebook.model import Notebook
+from backend.app.admin.model import User
 from backend.app.notebook.schema.notebook import CreateNotebookParam, UpdateNotebookParam
 from backend.common.exception import errors
 from backend.database.db_mysql import async_db_session
@@ -107,6 +108,27 @@ class NotebookService:
         async with async_db_session.begin() as db:
             count = await notebook_dao.delete(db, pk)
             return count
+
+    @staticmethod
+    async def get_api_key_by_user_id(*, user_id: str) -> str | None:
+        """
+        通过 user_id 查询用户的 api-key
+        :param user_id: 用户 ID
+        :return: api-key 或 None
+        """
+        async with async_db_session() as db:
+            try:
+                # 查询用户表，假设用户表中有 api_key 字段
+                result = await db.execute(select(User.settings).where(User.id == user_id))
+                print("result", result)
+                settings_json = result.scalar_one_or_none()
+                settings = json.loads(settings_json)
+                api_key = settings.get("api_key")  # 从字典中提取 api_key
+                return api_key
+
+            except Exception as e:
+                print(f"Error querying api-key: {e}")
+                return None
 
 
 notebook_service = NotebookService()
