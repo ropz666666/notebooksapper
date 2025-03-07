@@ -6,7 +6,7 @@ const HomePage: React.FC = () => {
     const navigate = useNavigate(); // 使用 useNavigate hook
 
     useEffect(() => {
-        navigate('/playground'); // 跳转到 /playground 页面
+        navigate('/note/playground'); // 跳转到 /playground 页面
     }, []);
 
     return (

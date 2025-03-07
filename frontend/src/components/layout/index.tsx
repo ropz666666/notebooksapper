@@ -97,7 +97,7 @@ const LayoutContainer: React.FC<{ children?: ReactNode }> = ({ children }) => {
     return (
         <Layout style={{ minHeight: '100vh', backgroundColor: 'white' }}>
             <Sider collapsible collapsed={collapsed} onCollapse={onCollapse} theme="light">
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '64px'}} onClick={() => navigate("/playground")}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '64px'}} onClick={() => navigate("/note/playground")}>
                     <Image src={logoImage} preview={false} width="50px" />
                     {!collapsed && <span style={{ marginLeft: 10 }}>智慧系统</span>}
                 </div>
